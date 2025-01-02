@@ -48,25 +48,44 @@ export function createBuffer(gl, {target = gl.ARRAY_BUFFER, size, usage = gl.STA
   return buf
 }
 
-export function createTexture(gl, {target, level, internalformat, w, h, border, format, type, data, srcOffset}) {
+
+export function setVertexAttrib(gl, {location, size = 2, type = gl.FLOAT, normalized = false, stride = 0, offset = 0}) {
+  gl.vertexAttribPointer(location, size, type, normalized, stride, offset)
+  gl.enableVertexAttribArray(location)
+}
+
+export function createTexture(gl, {target = gl.TEXTURE_2D, level = 0, internalformat = gl.RGBA, border = 0, format = gl.RGBA, type = gl.UNSIGNED_BYTE, data, offset}) {
   const tex = gl.createTexture()
   gl.activeTexture(gl.TEXTURE0)
   // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
   
-  gl.bindTexture(gl.TEXTURE_2D, tex)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, px)
+  gl.bindTexture(target, tex)
+  gl.texImage2D(target, level, internalformat, data.width || 1, data.height || 1, border, format, type, data)
 
+  gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(target, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-  gl.generateMipmap(gl.TEXTURE_2D)
-
+  gl.generateMipmap(target)
 
   return tex
+}
+
+export async function loadImage(src) {
+  return new Promise((res, rej) => {
+    const image = new Image()
+    image.src = src
+  
+    image.onload = () => {
+      res(image)
+    }
+
+    image.onerror = error => {
+      rej(error)
+    }
+  })
 }
 
 
@@ -74,6 +93,29 @@ export function color(r = 255, g = 255, b = 255) {
   return new Uint8Array([r, g, b, 255])
 }
 
+export function detectedUniforms(gl, program) {
+  const uniforms = {}
+  const activeUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
+
+  for (let i = 0; i < activeUniforms; i++) {
+      const info = gl.getActiveUniform(program, i)
+      uniforms[info.name] = gl.getUniformLocation(program, info.name)
+  }
+
+  return uniforms
+}
+
+export function detectedAttributes(gl, program) {
+  const attributes = {}
+  const activeAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
+
+  for (let i = 0; i < activeAttributes; i++) {
+      const info = gl.getActiveAttrib(program, i)
+      attributes[info.name] = gl.getAttribLocation(program, info.name)
+  }
+
+  return attributes
+}
 
 function createShader(gl, {src, type}) {
   const shader = gl.createShader(type)
