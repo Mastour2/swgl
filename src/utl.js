@@ -1,4 +1,4 @@
-export function createCanvas(w, h) {
+export function createGL(w, h) {
   const cx = document.createElement("canvas").getContext("webgl2")
   configCanvas(cx.canvas, w, h) 
 
@@ -9,16 +9,19 @@ export function createCanvas(w, h) {
 export function loop(callback) {
   let start = performance.now()
   
-  const lo = () => {
+  const lop = () => {
     const now = performance.now()
     const dealt = (now - start) / 1000
 
     callback(dealt)
   
     start = now
-    requestAnimationFrame(lo)
+    requestAnimationFrame(lop)
   }
-  requestAnimationFrame(lo)
+  requestAnimationFrame(lop)
+}
+
+export function createProgram(gl, vertex, fragment) {
 }
 
 export function program(gl, {vertex, fragment}) {
