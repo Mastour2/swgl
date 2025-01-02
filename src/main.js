@@ -1,6 +1,5 @@
 const W = innerWidth, H = innerHeight
 
-export default function main() {
-
-
+export default async function main() {
+  // Start here
 }
