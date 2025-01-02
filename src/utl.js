@@ -9,22 +9,29 @@ export function createGL(w, h) {
 export function loop(callback) {
   let start = performance.now()
   
-  const lop = () => {
+  const lo = () => {
     const now = performance.now()
     const dealt = (now - start) / 1000
 
     callback(dealt)
   
     start = now
-    requestAnimationFrame(lop)
+    requestAnimationFrame(lo)
   }
-  requestAnimationFrame(lop)
+  requestAnimationFrame(lo)
 }
 
-export function createProgram(gl, vertex, fragment) {
+export function createPrograms(gl, vertex, fragment) {
+  const prog = program(gl, { vertex, fragment })
+  const uniforms = detectedUniforms(gl, prog)
+  const attributes = detectedAttributes(gl, prog)
+
+  return {
+    program: prog, attributes, uniforms
+  }
 }
 
-export function program(gl, {vertex, fragment}) {
+function program(gl, {vertex, fragment}) {
   const pro = gl.createProgram()
   const v = createShader(gl, { src: vertex, type: gl.VERTEX_SHADER })
   const f = createShader(gl, { src: fragment, type: gl.FRAGMENT_SHADER })
@@ -36,8 +43,8 @@ export function program(gl, {vertex, fragment}) {
   const status = gl.getProgramParameter(pro, gl.LINK_STATUS)
 
   if(!status) {
-    const log = gl.getProgramInfoLog(shader)
-    throw new Error(`Cannot link program \nInfo log:\n ${log}`);
+    const log = gl.getProgramInfoLog(pro)
+    throw new Error(`Cannot link program \nInfo log:\n ${log}`)
   }
 
   return pro
@@ -53,11 +60,23 @@ export function createBuffer(gl, {target = gl.ARRAY_BUFFER, size, usage = gl.STA
 
 
 export function setVertexAttrib(gl, {location, size = 2, type = gl.FLOAT, normalized = false, stride = 0, offset = 0}) {
+  if(location == -1) {
+    console.warn("Attribute location not found.")
+    return
+  }
+
   gl.vertexAttribPointer(location, size, type, normalized, stride, offset)
   gl.enableVertexAttribArray(location)
 }
 
-export function createTexture(gl, {target = gl.TEXTURE_2D, level = 0, internalformat = gl.RGBA, border = 0, format = gl.RGBA, type = gl.UNSIGNED_BYTE, data, offset}) {
+
+export function cleanup(gl, { program = null, buffers = [], textures = [] }) {
+  if (program) gl.deleteProgram(program)
+  buffers.forEach(buffer => gl.deleteBuffer(buffer))
+  textures.forEach(texture => gl.deleteTexture(texture))
+}
+
+export function createTexture(gl, { target = gl.TEXTURE_2D, level = 0, internalformat = gl.RGBA, border = 0, format = gl.RGBA, type = gl.UNSIGNED_BYTE, data, offset, minFilter = gl.LINEAR, magFilter = gl.LINEAR, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, generateMipmap = true}) {
   const tex = gl.createTexture()
   gl.activeTexture(gl.TEXTURE0)
   // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
@@ -129,7 +148,7 @@ function createShader(gl, {src, type}) {
 
   if(!status) {
     const log = gl.getShaderInfoLog(shader)
-    throw new Error(`Cannot compile shader\nInfo log:\n ${log}`);
+    throw new Error(`Cannot compile shader\nInfo log:\n ${log}`)
   }
 
   return shader
