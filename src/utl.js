@@ -1,3 +1,4 @@
+// Creates a WebGL2 rendering context and a canvas.
 export function createGL(w, h) {
   const cx = document.createElement("canvas").getContext("webgl2")
   configCanvas(cx.canvas, w, h) 
@@ -6,6 +7,7 @@ export function createGL(w, h) {
   return cx
 }
 
+// Starts a render loop with frame timing.
 export function loop(callback) {
   let start = performance.now()
   
@@ -21,7 +23,7 @@ export function loop(callback) {
   requestAnimationFrame(lo)
 }
 
-// Build the programs and extract the attribute and uniform locations.
+// Creates a program from vertex and fragment shaders, and extracts uniform and attribute locations.
 export function createPrograms(gl, shaders) {
   const prog = program(gl, { vertex: shaders.vertex, fragment: shaders.fragment})
   const uniforms = detectedUniforms(gl, prog)
@@ -32,7 +34,7 @@ export function createPrograms(gl, shaders) {
   }
 }
 
-// Create the program and linked
+// Creates and links a WebGL program.
 export function program(gl, {vertex, fragment}) {
   const pro = gl.createProgram()
   const v = createShader(gl, { src: vertex, type: gl.VERTEX_SHADER })
@@ -52,6 +54,7 @@ export function program(gl, {vertex, fragment}) {
   return pro
 }
 
+// Creates a WebGL buffer and uploads data to it.
 // Create the buffer object in the driver and does not allocate any space in the GPU memory.
 // Activate the buffer object
 // Transfer the data from the main memory to the GPU memory. Memory allocation
@@ -63,7 +66,7 @@ export function createBuffer(gl, {target = gl.ARRAY_BUFFER, data = null, usage =
   return buf
 }
 
-
+// Configures a vertex attribute pointer.
 export function setVertexAttrib(gl, {location, count = 2, type = gl.FLOAT, normalized = false, stride = 0, offset = 0, divisor = 0}) {
   if(location == -1) {
     console.warn("Attribute location not found.")
@@ -75,13 +78,14 @@ export function setVertexAttrib(gl, {location, count = 2, type = gl.FLOAT, norma
       gl.vertexAttribDivisor(location, divisor);
 }
 
-
+// Releases WebGL resources.
 export function cleanup(gl, { program = null, buffers = [], textures = [] }) {
   if (program) gl.deleteProgram(program)
   buffers.forEach(buffer => gl.deleteBuffer(buffer))
   textures.forEach(texture => gl.deleteTexture(texture))
 }
 
+// Creates and configures a texture.
 export function createTexture(gl, { target = gl.TEXTURE_2D, unit, level = 0, internalformat = gl.RGBA, border = 0, format = gl.RGBA, type = gl.UNSIGNED_BYTE, data, image, offset, minFilter = gl.LINEAR, magFilter = gl.LINEAR, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, mip = true, flipY = false, flipX = false}) {
   const tex = gl.createTexture()
   
@@ -106,6 +110,7 @@ export function createTexture(gl, { target = gl.TEXTURE_2D, unit, level = 0, int
   return tex
 }
 
+// Loads an image asynchronously.
 export async function loadImage(src) {
   return new Promise((res, rej) => {
     const image = new Image()
@@ -121,11 +126,12 @@ export async function loadImage(src) {
   })
 }
 
-
+// Creates a Uint8Array representing an RGBA color.
 export function color(r = 255, g = 255, b = 255) {
   return new Uint8Array([r, g, b, 255])
 }
 
+// Detects and retrieves uniform locations.
 export function detectedUniforms(gl, program) {
   const uniforms = {}
   const activeUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
@@ -138,6 +144,7 @@ export function detectedUniforms(gl, program) {
   return uniforms
 }
 
+// Detects and retrieves attribute locations.
 export function detectedAttributes(gl, program) {
   const attributes = {}
   const activeAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES)
@@ -150,20 +157,24 @@ export function detectedAttributes(gl, program) {
   return attributes
 }
 
+// Sets the WebGL viewport.
 export function viewport(gl, { x = 0, y = 0, w = gl.drawingBufferWidth, h = gl.drawingBufferHeight }) {
   gl.viewport(x, y, w, h)
 }
 
+// Sets the clear color and clears the canvas.
 export function clearColor(gl, {r = 0, g = 0, b = 0, a = 1}) {
     r /= 255, g /= 255, b /= 255
     gl.clearColor(r, g, b, a)
     clean(gl)
 }
 
+// Clears the color and depth buffers.
 function clean(gl) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 
+// Creates and compiles a shader.
 function createShader(gl, {src, type}) {
   const shader = gl.createShader(type)
   gl.shaderSource(shader, src)
@@ -179,7 +190,7 @@ function createShader(gl, {src, type}) {
   return shader
 }
 
-
+// Configures canvas dimensions and styling.
 function configCanvas(cv, w, h) {
   const dpi = devicePixelRatio || 1
   cv.width = w * dpi
