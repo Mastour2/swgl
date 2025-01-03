@@ -63,7 +63,7 @@ export function createBuffer(gl, {target = gl.ARRAY_BUFFER, data = null, usage =
   gl.bindBuffer(target, buf)
   gl.bufferData(target, data, usage)
 
-  return buf
+  return {buffer: buf, data}
 }
 
 // Configures a vertex attribute pointer.
