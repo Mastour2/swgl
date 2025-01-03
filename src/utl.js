@@ -175,7 +175,7 @@ export function viewport(gl, { x = 0, y = 0, w = gl.drawingBufferWidth, h = gl.d
 }
 
 // Sets the clear color and clears the canvas.
-export function clearColor(gl, {r = 0, g = 0, b = 0, a = 1}) {
+export function renderColor(gl, {r = 0, g = 0, b = 0, a = 1}) {
     r /= 255, g /= 255, b /= 255
     gl.clearColor(r, g, b, a)
     clean(gl)
