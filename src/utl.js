@@ -1,6 +1,13 @@
+function panic(message) {
+  throw new Error(message)
+}
+
 // Creates a WebGL2 rendering context and a canvas.
 export function createGL(w, h) {
   const cx = document.createElement("canvas").getContext("webgl2")
+  
+  if (!cx) panic("Your browser not supports WebGL")
+  
   configCanvas(cx.canvas, w, h) 
 
   document.body.appendChild(cx.canvas)  
@@ -8,19 +15,19 @@ export function createGL(w, h) {
 }
 
 // Starts a render loop with frame timing.
-export function loop(callback) {
-  let start = performance.now()
+export function frame(callback) {
+  let prevTime = performance.now()
   
-  const lo = () => {
+  const frameCallback = () => {
     const now = performance.now()
-    const dealt = (now - start) / 1000
+    const dealt = (now - prevTime) / 1000
 
     callback(dealt)
   
-    start = now
-    requestAnimationFrame(lo)
+    prevTime = now
+    requestAnimationFrame(frameCallback)
   }
-  requestAnimationFrame(lo)
+  requestAnimationFrame(frameCallback)
 }
 
 // Creates a program from vertex and fragment shaders, and extracts uniform and attribute locations.
@@ -48,7 +55,7 @@ export function program(gl, {vertex, fragment}) {
 
   if(!status) {
     const log = gl.getProgramInfoLog(pro)
-    throw new Error(`Cannot link program \nInfo log:\n ${log}`)
+    panic(`Cannot link program \nInfo log:\n ${log}`)
   }
 
   return pro
@@ -157,6 +164,11 @@ export function detectedAttributes(gl, program) {
   return attributes
 }
 
+export function defaultConfigureScene(gl) {
+  viewport(gl, {x: 0, y: 0})
+  clearColor(gl, { r: 170, g: 170, b: 170 })
+}
+
 // Sets the WebGL viewport.
 export function viewport(gl, { x = 0, y = 0, w = gl.drawingBufferWidth, h = gl.drawingBufferHeight }) {
   gl.viewport(x, y, w, h)
@@ -184,7 +196,7 @@ function createShader(gl, {src, type}) {
 
   if(!status) {
     const log = gl.getShaderInfoLog(shader)
-    throw new Error(`Cannot compile shader\nInfo log:\n ${log}`)
+    panic(`Cannot compile shader\nInfo log:\n ${log}`)
   }
 
   return shader
