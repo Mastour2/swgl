@@ -21,6 +21,7 @@ export function loop(callback) {
   requestAnimationFrame(lo)
 }
 
+// Build the programs and extract the attribute and uniform locations.
 export function createPrograms(gl, shaders) {
   const prog = program(gl, { vertex: shaders.vertex, fragment: shaders.fragment})
   const uniforms = detectedUniforms(gl, prog)
@@ -31,6 +32,7 @@ export function createPrograms(gl, shaders) {
   }
 }
 
+// Create the program and linked
 export function program(gl, {vertex, fragment}) {
   const pro = gl.createProgram()
   const v = createShader(gl, { src: vertex, type: gl.VERTEX_SHADER })
@@ -46,16 +48,21 @@ export function program(gl, {vertex, fragment}) {
     const log = gl.getProgramInfoLog(pro)
     throw new Error(`Cannot link program \nInfo log:\n ${log}`)
   }
+
   return pro
 }
 
-export function createBuffer(gl, {target = gl.ARRAY_BUFFER, data, usage = gl.STATIC_DRAW}) {
+// Create the buffer object in the driver and does not allocate any space in the GPU memory.
+// Activate the buffer object
+// Transfer the data from the main memory to the GPU memory. Memory allocation
+export function createBuffer(gl, {target = gl.ARRAY_BUFFER, data = null, usage = gl.STATIC_DRAW}) {
   const buf = gl.createBuffer()
   gl.bindBuffer(target, buf)
   gl.bufferData(target, data, usage)
 
   return buf
 }
+
 
 export function setVertexAttrib(gl, {location, count = 2, type = gl.FLOAT, normalized = false, stride = 0, offset = 0, divisor = 0}) {
   if(location == -1) {
@@ -65,7 +72,7 @@ export function setVertexAttrib(gl, {location, count = 2, type = gl.FLOAT, norma
 
   gl.vertexAttribPointer(location, count, type, normalized, stride, offset)
   gl.enableVertexAttribArray(location)
-  gl.vertexAttribDivisor(location, divisor)
+      gl.vertexAttribDivisor(location, divisor);
 }
 
 
@@ -113,6 +120,7 @@ export async function loadImage(src) {
     }
   })
 }
+
 
 export function color(r = 255, g = 255, b = 255) {
   return new Uint8Array([r, g, b, 255])
@@ -171,6 +179,7 @@ function createShader(gl, {src, type}) {
   return shader
 }
 
+
 function configCanvas(cv, w, h) {
   const dpi = devicePixelRatio || 1
   cv.width = w * dpi
@@ -180,3 +189,5 @@ function configCanvas(cv, w, h) {
   cv.style.width = `${w}px`
   cv.style.height = `${h}px`
 }
+
+
