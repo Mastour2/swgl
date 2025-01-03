@@ -21,8 +21,8 @@ export function loop(callback) {
   requestAnimationFrame(lo)
 }
 
-export function createPrograms(gl, vertex, fragment) {
-  const prog = program(gl, { vertex, fragment })
+export function createPrograms(gl, shaders) {
+  const prog = program(gl, { vertex: shaders.vertex, fragment: shaders.fragment})
   const uniforms = detectedUniforms(gl, prog)
   const attributes = detectedAttributes(gl, prog)
 
@@ -31,7 +31,7 @@ export function createPrograms(gl, vertex, fragment) {
   }
 }
 
-function program(gl, {vertex, fragment}) {
+export function program(gl, {vertex, fragment}) {
   const pro = gl.createProgram()
   const v = createShader(gl, { src: vertex, type: gl.VERTEX_SHADER })
   const f = createShader(gl, { src: fragment, type: gl.FRAGMENT_SHADER })
@@ -46,27 +46,26 @@ function program(gl, {vertex, fragment}) {
     const log = gl.getProgramInfoLog(pro)
     throw new Error(`Cannot link program \nInfo log:\n ${log}`)
   }
-
   return pro
 }
 
-export function createBuffer(gl, {target = gl.ARRAY_BUFFER, size, usage = gl.STATIC_DRAW}) {
+export function createBuffer(gl, {target = gl.ARRAY_BUFFER, data, usage = gl.STATIC_DRAW}) {
   const buf = gl.createBuffer()
   gl.bindBuffer(target, buf)
-  gl.bufferData(target, size, usage)
+  gl.bufferData(target, data, usage)
 
   return buf
 }
 
-
-export function setVertexAttrib(gl, {location, size = 2, type = gl.FLOAT, normalized = false, stride = 0, offset = 0}) {
+export function setVertexAttrib(gl, {location, count = 2, type = gl.FLOAT, normalized = false, stride = 0, offset = 0, divisor = 0}) {
   if(location == -1) {
     console.warn("Attribute location not found.")
     return
   }
 
-  gl.vertexAttribPointer(location, size, type, normalized, stride, offset)
+  gl.vertexAttribPointer(location, count, type, normalized, stride, offset)
   gl.enableVertexAttribArray(location)
+  gl.vertexAttribDivisor(location, divisor)
 }
 
 
@@ -76,21 +75,26 @@ export function cleanup(gl, { program = null, buffers = [], textures = [] }) {
   textures.forEach(texture => gl.deleteTexture(texture))
 }
 
-export function createTexture(gl, { target = gl.TEXTURE_2D, level = 0, internalformat = gl.RGBA, border = 0, format = gl.RGBA, type = gl.UNSIGNED_BYTE, data, offset, minFilter = gl.LINEAR, magFilter = gl.LINEAR, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, generateMipmap = true}) {
+export function createTexture(gl, { target = gl.TEXTURE_2D, unit, level = 0, internalformat = gl.RGBA, border = 0, format = gl.RGBA, type = gl.UNSIGNED_BYTE, data, image, offset, minFilter = gl.LINEAR, magFilter = gl.LINEAR, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, mip = true, flipY = false, flipX = false}) {
   const tex = gl.createTexture()
-  gl.activeTexture(gl.TEXTURE0)
-  // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+  
+  if(unit != null) {
+    gl.activeTexture(gl.TEXTURE0 + unit)
+  }
+
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY)
+  // gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, flipX)
   
   gl.bindTexture(target, tex)
   gl.texImage2D(target, level, internalformat, data.width || 1, data.height || 1, border, format, type, data)
 
-  gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
+  gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   gl.texParameteri(target, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
   gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(target, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE)
 
-  gl.generateMipmap(target)
+  if(mip) gl.generateMipmap(target)
 
   return tex
 }
@@ -109,7 +113,6 @@ export async function loadImage(src) {
     }
   })
 }
-
 
 export function color(r = 255, g = 255, b = 255) {
   return new Uint8Array([r, g, b, 255])
@@ -139,6 +142,20 @@ export function detectedAttributes(gl, program) {
   return attributes
 }
 
+export function viewport(gl, { x = 0, y = 0, w = gl.drawingBufferWidth, h = gl.drawingBufferHeight }) {
+  gl.viewport(x, y, w, h)
+}
+
+export function clearColor(gl, {r = 0, g = 0, b = 0, a = 1}) {
+    r /= 255, g /= 255, b /= 255
+    gl.clearColor(r, g, b, a)
+    clean(gl)
+}
+
+function clean(gl) {
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+}
+
 function createShader(gl, {src, type}) {
   const shader = gl.createShader(type)
   gl.shaderSource(shader, src)
@@ -154,7 +171,6 @@ function createShader(gl, {src, type}) {
   return shader
 }
 
-
 function configCanvas(cv, w, h) {
   const dpi = devicePixelRatio || 1
   cv.width = w * dpi
@@ -164,4 +180,3 @@ function configCanvas(cv, w, h) {
   cv.style.width = `${w}px`
   cv.style.height = `${h}px`
 }
-
